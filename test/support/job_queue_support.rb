@@ -4,11 +4,11 @@ ActiveSupport::TestCase.class_eval do
   # when job execution is on jobs can end up in the queue and that can break future tests
   # so we clean after using JobExecution
   def with_job_execution
-    JobExecution.enabled = true
+    JobQueue.enabled = true
     yield
   ensure
-    JobExecution.enabled = false
-    JobExecution.send(:job_queue).clear
+    JobQueue.enabled = false
+    JobQueue.clear
   end
 
   def self.with_job_execution
@@ -35,14 +35,14 @@ ActiveSupport::TestCase.class_eval do
   end
 
   def wait_for_jobs_to_finish
-    sleep 0.01 until JobExecution.send(:job_queue).debug == [{}, {}]
+    sleep 0.01 until JobQueue.debug == [{}, {}]
   end
 
   def with_blocked_jobs(count)
     with_job_execution do
       begin
         lock = Mutex.new.lock
-        JobExecution.any_instance.expects(:perform).times(count).with { lock.synchronize { true } }
+        JobQueue.any_instance.expects(:perform).times(count).with { lock.synchronize { true } }
         yield
       ensure
         lock.unlock

@@ -119,8 +119,8 @@ describe DeployService do
         deploy_one = create_deployment(user, 'v1', stage, 'running')
         deploy_two = create_deployment(user, 'v2', stage, 'pending')
 
-        JobExecution.expects(:queued?).with(deploy_two.job.id).returns(true)
-        JobExecution.expects(:dequeue).with(deploy_two.job.id).returns(true)
+        JobQueue.expects(:queued?).with(deploy_two.job.id).returns(true)
+        JobQueue.expects(:dequeue).with(deploy_two.job.id).returns(true)
 
         service.deploy(stage, reference: reference)
 
@@ -142,7 +142,7 @@ describe DeployService do
 
   describe "#confirm_deploy!" do
     it "starts a job execution" do
-      JobExecution.expects(:perform_later).returns(mock).once
+      JobQueue.expects(:perform_later).returns(mock).once
       service.confirm_deploy(deploy)
     end
 
@@ -153,8 +153,8 @@ describe DeployService do
 
       it "immediately starts the job" do
         job_execution
-        JobExecution.stubs(:new).returns(job_execution)
-        JobExecution.expects(:perform_later).with(job_execution, queue: nil)
+        JobQueue.stubs(:new).returns(job_execution)
+        JobQueue.expects(:perform_later).with(job_execution, queue: nil)
         deploy.buddy = user
         service.confirm_deploy(deploy)
       end
@@ -163,8 +163,8 @@ describe DeployService do
     describe "when stage can't run in parallel" do
       it "will be queued on the stage id" do
         job_execution
-        JobExecution.stubs(:new).returns(job_execution)
-        JobExecution.expects(:perform_later).with(job_execution, queue: "stage-#{stage.id}")
+        JobQueue.stubs(:new).returns(job_execution)
+        JobQueue.expects(:perform_later).with(job_execution, queue: "stage-#{stage.id}")
         deploy.buddy = user
         service.confirm_deploy(deploy)
       end
@@ -177,13 +177,13 @@ describe DeployService do
         job_execution.stubs(:execute)
         job_execution.stubs(:setup).returns(true)
 
-        JobExecution.stubs(:new).returns(job_execution)
+        JobQueue.stubs(:new).returns(job_execution)
         JobQueue.any_instance.stubs(:delete_and_enqueue_next) # we do not properly add the job, so removal fails
       end
 
       it "starts a job execution" do
         stub_request(:get, "https://api.github.com/repos/bar/foo/compare/staging...staging")
-        JobExecution.expects(:perform_later).returns(mock).once
+        JobQueue.expects(:perform_later).returns(mock).once
         DeployMailer.expects(:bypass_email).never
         deploy.buddy = other_user
         service.confirm_deploy(deploy)
@@ -191,7 +191,7 @@ describe DeployService do
 
       it "reports bypass via mail" do
         stub_request(:get, "https://api.github.com/repos/bar/foo/compare/staging...staging")
-        JobExecution.expects(:perform_later).returns(mock).once
+        JobQueue.expects(:perform_later).returns(mock).once
         DeployMailer.expects(bypass_email: stub(deliver_now: true))
         deploy.buddy = user
         service.confirm_deploy(deploy)
@@ -207,7 +207,7 @@ describe DeployService do
       job_execution.stubs(:execute)
       job_execution.stubs(:setup).returns(true)
 
-      JobExecution.stubs(:new).returns(job_execution)
+      JobQueue.stubs(:new).returns(job_execution)
       JobQueue.any_instance.stubs(:delete_and_enqueue_next) # we do not properly add the job, so removal fails
     end
 
@@ -232,7 +232,7 @@ describe DeployService do
       job_execution.stubs(:execute)
       job_execution.stubs(:setup).returns(true)
 
-      JobExecution.stubs(:new).returns(job_execution)
+      JobQueue.stubs(:new).returns(job_execution)
       JobQueue.any_instance.stubs(:delete_and_enqueue_next) # we do not properly add the job, so removal fails
     end
 
