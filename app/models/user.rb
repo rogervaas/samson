@@ -20,6 +20,7 @@ class User < ActiveRecord::Base
   has_many :csv_exports, dependent: :destroy
 
   validates :role_id, inclusion: { in: Role.all.map(&:id) }
+  validates :external_id, uniqueness: true
 
   before_create :set_token
   validates :time_format, inclusion: { in: TIME_FORMATS }
