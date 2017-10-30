@@ -18,6 +18,7 @@ class User < ActiveRecord::Base
   has_many :user_project_roles, dependent: :destroy
   has_many :projects, through: :user_project_roles
   has_many :csv_exports, dependent: :destroy
+  has_many :access_tokens, dependent: :destroy, class_name: 'Doorkeeper::AccessToken', foreign_key: :resource_owner_id
 
   validates :role_id, inclusion: { in: Role.all.map(&:id) }
   validates :external_id, uniqueness: true
